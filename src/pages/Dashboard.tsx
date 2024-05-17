@@ -156,7 +156,7 @@ const Dashboard: NextPage = () => {
                                 <div className="flex">
                                   <div className="h-16 w-16 flex-shrink-0">
                                     <Thumbnail
-                                      thumbnailUrl={video.thumbnailUrl}
+                                      thumbnailUrl={video.thumbnailUrl || ""}
                                     />
                                   </div>
                                   <div className="ml-4 font-medium text-gray-900">

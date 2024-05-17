@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mongodb"
+  url          = env("DATABASE_URL")
+}
+
+enum EngagementType {
+  LIKE
+  DISLIKE
+  SAVE
+  FOLLOW
+  VIEW
+}
+
+model User {
+  id                      String                   @id @default(auto()) @map("_id") @db.ObjectId
+  name                    String?
+  email                   String                   @unique
+  emailVerified           DateTime?
+  image                   String?
+  backgroundImage         String?
+  handle                  String?                  @unique
+  description             String?
+  videos                  Video[]
+  videoEngagements        VideoEngagement[]
+  playlists               Playlist[]
+  announcements           Announcement[]
+  announcementEngagements AnnouncementEngagement[]
+  followers               FollowEngagement[]       @relation("Followings")
+  followings              FollowEngagement[]       @relation("Followers")
+  comments                Comment[]
+  accounts                Account[]
+  sessions                Session[]
+}
+
+model Video {
+  id           String             @id @default(auto()) @map("_id") @db.ObjectId
+  title        String?
+  thumbnailUrl String?
+  description  String?
+  videoUrl     String?
+  publish      Boolean            @default(true)
+  userId       String             @db.ObjectId
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  comments     Comment[]
+  playlists    PlaylistHasVideo[]
+  videoEngagements VideoEngagement[]
+}
+
+model VideoEngagement {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String?        @db.ObjectId
+  videoId        String         @db.ObjectId
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  engagementType EngagementType
+  user           User?          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  video          Video          @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Playlist {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  userId      String             @db.ObjectId
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  user        User?              @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  videos      PlaylistHasVideo[]
+}
+
+model PlaylistHasVideo {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  playlistId String    @db.ObjectId
+  videoId    String    @db.ObjectId
+  playlist   Playlist? @relation(fields: [playlistId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  video      Video?    @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Comment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  message   String
+  videoId   String   @db.ObjectId
+  userId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Announcement {
+  id                      String                   @id @default(auto()) @map("_id") @db.ObjectId
+  message                 String
+  userId                  String                   @db.ObjectId
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  announcementEngagements AnnouncementEngagement[]
+}
+
+model AnnouncementEngagement {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String         @db.ObjectId
+  engagementType EngagementType
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  announcementId String         @db.ObjectId
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  announcement   Announcement   @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([userId, announcementId])
+}
+
+model FollowEngagement {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  followerId     String         @db.ObjectId
+  followingId    String         @db.ObjectId
+  engagementType EngagementType
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  following      User           @relation("Followings", fields: [followingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  follower       User           @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model VerificationToken {
+  identifier String   @id @map("_id") @db.ObjectId
+  token      String   @unique
+  expires    DateTime
+}

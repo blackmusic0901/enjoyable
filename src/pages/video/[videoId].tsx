@@ -63,7 +63,7 @@ const VideoPage: NextPage = () => {
       void refetchVideoData();
       addView({
         id: videoId as string,
-        userId: sessionData ? sessionData.user.id : " ",
+        userId: sessionData ? sessionData.user.id : "000000000000000000000000",
       });
     }
   }, [videoId]);
